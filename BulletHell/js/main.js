@@ -1,4 +1,4 @@
-// main.js
+ // main.js
 // Dependencies: 
 // Description: singleton object
 // This object will be our main "controller" class and will contain references
@@ -49,7 +49,8 @@ app.main = {
 		NORMAL : 0,
 		AIMING : 1,
 		WAITING: 2,
-		DONE : 3
+		EXPLODED: 3,
+		DONE : 4
 	}),
 	
 	GAME_STATE: Object.freeze({ // another fake enumeration
@@ -222,6 +223,10 @@ app.main = {
 				this.xSpeed = attackVector.x * 3;
 				this.ySpeed = attackVector.y * 3;
 			}
+			else if(this.isRocket){
+				this.xSpeed = attackVector.x * .5;
+				this.ySpeed = attackVector.y * .5;
+			}
 			else{
 				this.xSpeed = attackVector.x;
 				this.ySpeed = attackVector.y;
@@ -291,14 +296,16 @@ app.main = {
 			if (Math.random() <= 0.25){
 				c.isSniper = true;
 			}
-			else if (Math.random() > 0.25 && Math.random() <= 0.35){
+			else if (Math.random() > 0.25 && Math.random() <= 0.30){
 				c.isRocket = true;
+				c.radius = this.BULLET.START_RADIUS + 10;
 			}
 			
 			//Make more properties
 			c.speed = this.BULLET.MAX_SPEED;
 			c.fillStyle = this.colors[i % this.colors.length];
 			c.state = this.BULLET_STATE.AIMING;
+			c.timer = 0;
 			
 			c.draw = bulletDraw;
 			c.move = bulletMove;
@@ -338,6 +345,16 @@ app.main = {
 			//	}
 			//	c.drawLine('red', ctx, attackVector);
 			//}
+			if(c.state == this.BULLET_STATE.EXPLODED){
+				if((this.totalTime - c.timer) > 3){
+					console.log("Shrinking");
+					c.radius = c.radius - 2;
+					if(c.radius <= 0){
+						console.log("done")
+						c.state = this.BULLET_STATE.DONE;
+					}
+				}
+			}
 			if (c.state == this.BULLET_STATE.WAITING && this.totalTime >= (this.currentBullet * this.bulletTimer) + this.startWaitTime && i == this.currentBullet){
 				this.currentBullet++;
 				c.shoot();
@@ -449,13 +466,26 @@ app.main = {
 				if (bulletHit(c, this.player)){
 					this.gameState = this.GAME_STATE.END;
 				}
+				for(var j = 0; j<this.currentBullet; j++){
+					var c2 = this.bullets[j];
+					if(c2.isRocket && c2.state != this.BULLET_STATE.EXPLODED){
+						if(c != c2 && circlesIntersect(c,c2) && !c.isRocket){
+							c2.radius = 60;
+							c2.xSpeed = 0;
+							c2.ySpeed = 0;
+							c2.timer = this.totalTime;
+							c.state = this.BULLET_STATE.DONE;
+							c2.state = this.BULLET_STATE.EXPLODED;
+						}
+					}
+				}
 			} // end for
 			
 			// round over?
 			var isOver = true;
 			for(var i=0;i<this.bullets.length; i++){
 				var c = this.bullets[i];
-				if(c.state != this.BULLET_STATE.DONE){
+				if(c.state != this.BULLET_STATE.DONE ){
 				 isOver = false;
 				 break;
 				}
