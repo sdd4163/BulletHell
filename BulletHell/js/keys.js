@@ -29,36 +29,7 @@ myKeys.keydown = [];
 window.addEventListener("keydown",function(e){
 	console.log("keydown=" + e.keyCode);
 	myKeys.keydown[e.keyCode] = true;
-	//var char = String.fromCharCode(e.keyCode);
-	//if (char == "w" || char == "W"){
-	//	app.main.player.move(1);
-	//}
-	//if (char == "a" || char == "A"){
-	//	app.main.player.move(2);
-	//}
-	//if (char == "s" || char == "S"){
-	//	app.main.player.move(3);
-	//}
-	//if (char == "d" || char == "D"){
-	//	app.main.player.move(4);
-	//}
 });
-
-//window.addEventListener("keypressed", function(e){
-//	var char = String.fromCharCode(e.keyCode);
-//	if (char == "w" || char == "W"){
-//		app.main.player.move(1);
-//	}
-//	if (char == "a" || char == "A"){
-//		app.main.player.move(2);
-//	}
-//	if (char == "s" || char == "S"){
-//		app.main.player.move(3);
-//	}
-//	if (char == "d" || char == "D"){
-//		app.main.player.move(4);
-//	}
-//});
 	
 window.addEventListener("keyup",function(e){
 	console.log("keyup=" + e.keyCode);

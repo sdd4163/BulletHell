@@ -60,6 +60,13 @@ function getVectorToPlayer(tX, tY){
 	return {x:x, y:y};
 }
 
+function getLineVectorToPlayer(tX, tY){
+	var x = app.main.player.x - tX;
+	var y = app.main.player.y - tY;
+	
+	return {x:x, y:y};
+}
+
 function simplePreload(imageArray){
 	// loads images all at once
 	for (var i = 0; i < imageArray.length; i++) {

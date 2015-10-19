@@ -29,13 +29,14 @@ app.main = {
     canvas: undefined,
     ctx: undefined,
    	lastTime: 0, // used by calculateDeltaTime() 
-    debug: false,
+    debug: true,
 	paused: false,
 	animationID: 0,
 	gameState: undefined,
 	totalScore: 0,
 	totalTime: 0,
-	bulletTimer: 0.5,
+	bulletTimer: 0.6,
+	lineTimer: 0.4,
 	currentBullet: 0,
 	startWaitTime: 3,
 	// original 8 fluorescent crayons: https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors#Fluorescent_crayons
@@ -46,8 +47,9 @@ app.main = {
 	
 	BULLET_STATE: Object.freeze({ // fake enumeration, actually an object literal
 		NORMAL : 0,
-		WAITING : 1,
-		DONE : 2
+		AIMING : 1,
+		WAITING: 2,
+		DONE : 3
 	}),
 	
 	GAME_STATE: Object.freeze({ // another fake enumeration
@@ -116,18 +118,16 @@ app.main = {
 		// i) draw background
 		this.ctx.fillStyle = "black"; 
 		this.ctx.fillRect(0,0,this.WIDTH,this.HEIGHT); 
-	
-	
-		this.ctx.globalAlpha = 1.0;
-		this.player.draw(this.ctx);
-		this.player.move();
 		
 		// ii) draw bullets
 		this.ctx.globalAlpha = 0.9;
 		this.drawBullets(this.ctx);
 		
-		// iii) draw HUD
 		this.ctx.globalAlpha = 1.0;
+		this.player.draw(this.ctx);
+		this.player.move();
+		
+		// iii) draw HUD
 		this.drawHUD(this.ctx);
 		
 		// iv) draw debug info
@@ -172,16 +172,16 @@ app.main = {
 	makePlayer: function(){
 		var playerMove = function(){
 			if (myKeys.keydown[myKeys.KEYBOARD.KEY_W]){
-				p.y -= 2.0;
+				p.y -= 2.5;
 			}
 			if (myKeys.keydown[myKeys.KEYBOARD.KEY_A]){
-				p.x -= 2.0;
+				p.x -= 2.5;
 			}
 			if (myKeys.keydown[myKeys.KEYBOARD.KEY_S]){
-				p.y += 2.0;
+				p.y += 2.5;
 			}
 			if (myKeys.keydown[myKeys.KEYBOARD.KEY_D]){
-				p.x += 2.0;
+				p.x += 2.5;
 			}
 		}
 		
@@ -215,12 +215,30 @@ app.main = {
 			this.y += this.ySpeed * this.speed * dt;
 		};
 		
-		var shootBullet  = function(){
+		var shootBullet = function(){
 			var attackVector = getVectorToPlayer(this.x, this.y);
 			console.log(attackVector);
-			this.xSpeed = attackVector.x;
-			this.ySpeed = attackVector.y;
+			if (this.isSniper){
+				this.xSpeed = attackVector.x * 3;
+				this.ySpeed = attackVector.y * 3;
+			}
+			else{
+				this.xSpeed = attackVector.x;
+				this.ySpeed = attackVector.y;
+			}
 			this.state = app.main.BULLET_STATE.NORMAL;
+		};
+		
+		var drawLine  = function(color, ctx){
+			var attackVector = getLineVectorToPlayer(this.x, this.y);
+			ctx.save();
+			ctx.beginPath();
+			ctx.moveTo(this.x, this.y);
+			ctx.lineTo(this.x + attackVector.x, this.y + attackVector.y);
+			ctx.closePath();
+			ctx.strokeStyle = color;
+			ctx.stroke();
+			ctx.restore();
 		};
 		
 		var bulletDraw = function(ctx){
@@ -266,14 +284,26 @@ app.main = {
 			//Add a radius property
 			c.radius = this.BULLET.START_RADIUS;
 			
+			//Special Bullet Bools
+			c.isSniper = false;
+			c.isRocket = false;
+			
+			if (Math.random() <= 0.25){
+				c.isSniper = true;
+			}
+			else if (Math.random() > 0.25 && Math.random() <= 0.35){
+				c.isRocket = true;
+			}
+			
 			//Make more properties
 			c.speed = this.BULLET.MAX_SPEED;
 			c.fillStyle = this.colors[i % this.colors.length];
-			c.state = this.BULLET_STATE.WAITING;
+			c.state = this.BULLET_STATE.AIMING;
 			
 			c.draw = bulletDraw;
 			c.move = bulletMove;
 			c.shoot = shootBullet;
+			c.drawLine = drawLine;
 			
 			//No more properties can be added!
 			Object.seal(c);
@@ -288,11 +318,31 @@ app.main = {
 		}
 		for(var i = 0; i < this.bullets.length; i++){
 			var c = this.bullets[i];
+			var attackVector = getVectorToPlayer(c.x, c.y);
+			//if (c.state == this.BULLET_STATE.AIMING && this.totalTime >= (this.currentBullet * this.lineTimer) + this.bulletTimer + (this.currentBullet * 0.2) + 0.2 + this.startWaitTime && 
+			//															this.totalTime > ((this.currentBullet - 1) * this.bulletTimer) + this.startWaitTime && i == this.currentBullet){
+			if (!c.isSniper && c.state == this.BULLET_STATE.AIMING && i == this.currentBullet){
+				c.state = app.main.BULLET_STATE.WAITING;
+			}
+			else if (c.state == this.BULLET_STATE.AIMING && this.totalTime < (this.currentBullet * this.lineTimer) + this.bulletTimer + (this.currentBullet * 0.2) + this.startWaitTime && 
+																		this.totalTime > ((this.currentBullet - 1) * this.bulletTimer) + this.startWaitTime && i == this.currentBullet && c.isSniper){
+				c.drawLine('blue', ctx);
+			}
+			if (c.isSniper && c.state == this.BULLET_STATE.AIMING && this.totalTime >= (this.currentBullet * this.bulletTimer) + this.lineTimer + 0.2 + this.startWaitTime){
+				c.state = app.main.BULLET_STATE.WAITING;
+			}
+			
+			//if (c.state == this.BULLET_STATE.AIMING && this.totalTime > (this.currentBullet * this.bulletTimer) + this.lineTimer + this.startWaitTime && i == this.currentBullet){
+			//	if (this.totalTime >= (this.currentBullet * this.bulletTimer) + this.lineTimer + 0.2 + this.startWaitTime){
+			//		c.state = app.main.BULLET_STATE.WAITING;
+			//	}
+			//	c.drawLine('red', ctx, attackVector);
+			//}
 			if (c.state == this.BULLET_STATE.WAITING && this.totalTime >= (this.currentBullet * this.bulletTimer) + this.startWaitTime && i == this.currentBullet){
 				this.currentBullet++;
 				c.shoot();
 			}
-			else if (c.state == this.BULLET_STATE.DONE || c.state == this.BULLET_STATE.WAITING){
+			else if (c.state == this.BULLET_STATE.DONE || c.state == this.BULLET_STATE.WAITING || c.state == this.BULLET_STATE.AIMING){
 				continue;
 			}
 			c.draw(ctx);
@@ -302,15 +352,7 @@ app.main = {
 	moveBullets: function(dt){
 		for(var i=0;i<this.bullets.length; i++){
 			var c = this.bullets[i];
-			if(c.state === this.BULLET_STATE.DONE || c.state === this.BULLET_STATE.WAITING) continue;
-			//if(c.state === this.BULLET_STATE.WAITING){
-			//	c.radius += this.BULLET.EXPLOSION_SPEED  * dt;
-			//	if (c.radius >= this.BULLET.MAX_RADIUS){
-			//		c.state = this.BULLET_STATE.MAX_SIZE;
-			//		console.log("BULLET #" + i + " hit BULLET.MAX_RADIUS");
-			//	}
-			//	continue;
-			//}
+			if(c.state === this.BULLET_STATE.DONE || c.state === this.BULLET_STATE.WAITING || c.state === this.BULLET_STATE.AIMING) continue;
 		    
 			// move bullets
 			c.move(dt);
@@ -387,21 +429,6 @@ app.main = {
 		var mouse = getMouse(e);
 	},
 	
-	checkBulletClicked: function(mouse){
-		//Looping through BULLET array backwards, why?
-		for (var i = this.bullets.length - 1; i >= 0; i--){
-			var c = this.bullets[i];
-			if (pointInsideBullet(mouse.x, mouse.y, c)){
-				c.xSpeed = c.ySpeed = 0;
-				c.state = this.BULLET_STATE.WAITING;
-				this.gameState = this.GAME_STATE.WAITING;
-				this.roundScore++;
-				this.sound.playEffect();
-				break; //we want to click only this BULLET
-			}
-		}
-	},
-	
 	//Creates a new level of bullets
 	reset: function(){
 		this.totalTime = 0;
@@ -422,22 +449,6 @@ app.main = {
 				if (bulletHit(c, this.player)){
 					this.gameState = this.GAME_STATE.END;
 				}
-				//for(var j=0;j<this.bullets.length; j++){
-				//	var c2 = this.bullets[j];
-				//// don't check for collisions if c2 is the same BULLET
-				//	if (c1 === c2) continue; 
-				//// don't check for collisions if c2 is already WAITING 
-				//	if (c2.state != this.BULLET_STATE.NORMAL ) continue;  
-				//	if (c2.state === this.BULLET_STATE.DONE) continue;
-				//
-				//	// Now you finally can check for a collision
-				//	if(bulletsIntersect(c1,c2) ){
-				//		c2.state = this.BULLET_STATE.WAITING;
-				//		c2.xSpeed = c2.ySpeed = 0;
-				//		this.roundScore ++;
-				//		this.sound.playEffect();
-				//	}
-				//}
 			} // end for
 			
 			// round over?
@@ -451,15 +462,7 @@ app.main = {
 			} // end for
 		
 			if(isOver){
-				//if (this.numbullets == this.BULLET.NUM_BULLETS_END){
-				//	this.totalScore += this.roundScore;
-				//	this.gameState = this.GAME_STATE.END;
-				//}
-				//else {
-				//	this.gameState = this.GAME_STATE.ROUND_OVER;
-				//	this.totalScore += this.roundScore;
-				//}
-				//this.stopBGAudio();
+				this.stopBGAudio();
 				this.gameState = this.GAME_STATE.ROUND_OVER
 			 }
 				
