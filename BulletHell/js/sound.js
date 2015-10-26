@@ -15,16 +15,16 @@ app.sound = (function(){
 	
 
 	function init(){
-		//bgAudio = document.querySelector("#bgAudio");
-		//bgAudio.volume=0.25;
+		bgAudio = document.querySelector("#bgAudio");
+		bgAudio.volume=0.3;
 		
 		//audio for gunshots
 		gunShotAudio = document.querySelector("#gunshotAudio");
-		gunShotAudio.volume = 0.3;
+		gunShotAudio.volume = 0.2;
 		gunShotAudio.src = "media/gunshot.mp3";
 		//audio for sniper
 		sniperShotAudio = document.querySelector("#sniperAudio");
-		sniperShotAudio.volume = 0.3;
+		sniperShotAudio.volume = 0.2;
 		sniperShotAudio.src = "media/snipershot.mp3";
 		//audio for rocket
 		rocketShotAudio = document.querySelector("#rocketAudio");
@@ -33,8 +33,7 @@ app.sound = (function(){
 	}
 		
 	function stopBGAudio(){
-		//bgAudio.pause();
-		//bgAudio.currentTime = 0;
+		bgAudio.volume = 0.1;
 	}
 	
 	//Gunshot Soundsd
@@ -58,7 +57,8 @@ app.sound = (function(){
 	}
 	
 	function playBGAudio(){
-		//bgAudio.play();
+		bgAudio.volume=0.3;
+		bgAudio.play();
 	}
 		
 	// export a public interface to this module
