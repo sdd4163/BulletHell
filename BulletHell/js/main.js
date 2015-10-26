@@ -235,14 +235,17 @@ app.main = {
 			if (this.isSniper){							//issue is or what causes it, but the log fixes it.
 				this.xSpeed = attackVector.x * 3;
 				this.ySpeed = attackVector.y * 3;
+				app.main.sound.sniperShot();
 			}
 			else if(this.isRocket){
 				this.xSpeed = attackVector.x * .5;
 				this.ySpeed = attackVector.y * .5;
+				app.main.sound.rocketShot();
 			}
 			else{
 				this.xSpeed = attackVector.x;
 				this.ySpeed = attackVector.y;
+				app.main.sound.gunShot();
 			}
 			this.state = app.main.BULLET_STATE.NORMAL;
 		};
@@ -480,6 +483,7 @@ app.main = {
 							b2.timer = this.totalTime;
 							b.state = this.BULLET_STATE.DONE;
 							b2.state = this.BULLET_STATE.EXPLODED;
+							this.sound.explosion();
 						}
 					}
 				}

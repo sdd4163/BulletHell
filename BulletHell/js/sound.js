@@ -8,36 +8,57 @@ var app = app || {};
 app.sound = (function(){
 	//console.log("sound.js module loaded");
 	var bgAudio = undefined;
-	var effectAudio = undefined;
-	var currentEffect = 0;
-	var currentDirection = 1;
-	var effectSounds = ["1.mp3","2.mp3","3.mp3","4.mp3","5.mp3","6.mp3","7.mp3","8.mp3"];
+	var gunShotAudio = undefined;
+	var sniperShotAudio = undefined;
+	var rocketShotAudio = undefined;
+	var effectSounds = ["gunshot.mp3","snipershot.mp3"];
 	
 
 	function init(){
-		bgAudio = document.querySelector("#bgAudio");
-		bgAudio.volume=0.25;
-		effectAudio = document.querySelector("#effectAudio");
-		effectAudio.volume = 0.3;
+		//bgAudio = document.querySelector("#bgAudio");
+		//bgAudio.volume=0.25;
+		
+		//audio for gunshots
+		gunShotAudio = document.querySelector("#gunshotAudio");
+		gunShotAudio.volume = 0.3;
+		gunShotAudio.src = "media/gunshot.mp3";
+		//audio for sniper
+		sniperShotAudio = document.querySelector("#sniperAudio");
+		sniperShotAudio.volume = 0.3;
+		sniperShotAudio.src = "media/snipershot.mp3";
+		//audio for rocket
+		rocketShotAudio = document.querySelector("#rocketAudio");
+		rocketShotAudio.volume = 0.3;
+		
 	}
 		
 	function stopBGAudio(){
-		bgAudio.pause();
-		bgAudio.currentTime = 0;
+		//bgAudio.pause();
+		//bgAudio.currentTime = 0;
 	}
 	
-	function playEffect(){
-		effectAudio.src = "media/" + effectSounds[currentEffect];
-		effectAudio.play();
-		currentEffect += currentDirection;
-		if (currentEffect == effectSounds.length || currentEffect == -1){
-			currentDirection *= -1;
-			currentEffect += currentDirection;
-		}
+	//Gunshot Soundsd
+	function playGunshot(){
+		gunShotAudio.currentTime = 0; //used so the sound byte replays everytime a new bullet shoots
+		gunShotAudio.play();
+	}
+	function playSniper(){
+		sniperShotAudio.currentTime = 0;
+		sniperShotAudio.play();
+	}
+	function playRocket(){
+		rocketShotAudio.src = "media/rocketshot.mp3";
+		rocketShotAudio.currentTime = 0;
+		rocketShotAudio.play();
+	}
+	function playExplosion(){
+		rocketShotAudio.src = "media/rocketexplosion.mp3";
+		rocketShotAudio.currentTime = 0;
+		rocketShotAudio.play();
 	}
 	
 	function playBGAudio(){
-		bgAudio.play();
+		//bgAudio.play();
 	}
 		
 	// export a public interface to this module
@@ -45,6 +66,9 @@ app.sound = (function(){
 		init: init,
 		stopBGAudio: stopBGAudio,
 		playBGAudio: playBGAudio, 
-		playEffect: playEffect
+		gunShot: playGunshot,
+		sniperShot: playSniper,
+		rocketShot: playRocket,
+		explosion: playExplosion,
 	};
 }());
